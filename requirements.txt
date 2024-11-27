@@ -23,7 +23,7 @@ Shapely
 SQLAlchemy==1.4
 urllib3
 validators
-Werkzeug==0.16.1
+Werkzeug==3.0.3
 WTForms
 WTForms-Components
 gunicorn
