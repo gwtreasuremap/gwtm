@@ -17,13 +17,19 @@ from enum import IntEnum
 from dateutil.parser import parse as date_parse
 
 from src.function import isInt, isFloat
-from src import app
+from src import app, gwtmconfig
 from src import login
 
 from . import function
 from . import enums
 
 db = SQLAlchemy(app)
+
+def create_database_tables():
+    app.config["SQLALCHEMY_DATABASE_URI"] = gwtmconfig.config.SQLALCHEMY_DATABASE_URI
+    with app.app_context():
+        db.create_all()
+
 
 def to_json(inst, cls):
     """
@@ -55,16 +61,17 @@ def to_json(inst, cls):
         elif "depth_unit" in str(v):
             d[c.name] = v.name
         elif "geography" in str(c.type):
-            #try:
+            # try:
             d[c.name] = str(geoalchemy2.shape.to_shape(v))
-            #except:
+            # except:
             #   d[c.name] = v
         elif isinstance(v, (datetime.date, datetime.datetime)):
             d[c.name] = v.isoformat()
         else:
             d[c.name] = v
-    #to fix the api do : return d, and json.dumps() in api returns...
+    # to fix the api do : return d, and json.dumps() in api returns...
     return json.dumps(d)
+
 
 def parse_model(inst, cls):
     """
@@ -96,16 +103,17 @@ def parse_model(inst, cls):
         elif "depth_unit" in str(v):
             d[c.name] = v.name
         elif "geography" in str(c.type):
-            #try:
+            # try:
             d[c.name] = str(geoalchemy2.shape.to_shape(v))
-            #except:
+            # except:
             #   d[c.name] = v
         elif isinstance(v, (datetime.date, datetime.datetime)):
             d[c.name] = v.isoformat()
         else:
             d[c.name] = v
-    #to fix the api do : return d, and json.dumps() in api returns...
+    # to fix the api do : return d, and json.dumps() in api returns...
     return d
+
 
 class valid_mapping():
     def __init__(self):
@@ -133,221 +141,222 @@ class SpectralRangeHandler:
     '''
         spectral type enum
     '''
+
     class spectralrangetype(IntEnum):
         wavelength = 1
         energy = 2
         frequency = 3
 
-
     '''
         older bandpass dictionary
     '''
     bandpass_wavelength_dictionary = {
-        enums.bandpass.U : {
+        enums.bandpass.U: {
             'source': 'CTIO/SOI.bessel_U',
-            'central_wave' : 3614.82,
-            'bandwidth' : 617.24
+            'central_wave': 3614.82,
+            'bandwidth': 617.24
         },
-        enums.bandpass.B : {
+        enums.bandpass.B: {
             'source': 'CTIO/SOI.bessel_B',
-            'central_wave' : 4317.0,
-            'bandwidth' : 991.48
+            'central_wave': 4317.0,
+            'bandwidth': 991.48
         },
-        enums.bandpass.V : {
+        enums.bandpass.V: {
             'source': 'CTIO/SOI.bessel_V',
-            'central_wave' : 5338.65,
-            'bandwidth' : 810.65
+            'central_wave': 5338.65,
+            'bandwidth': 810.65
         },
-        enums.bandpass.R : {
+        enums.bandpass.R: {
             'source': 'CTIO/SOI.bessel_R',
-            'central_wave' : 6311.86,
-            'bandwidth' : 1220.89
+            'central_wave': 6311.86,
+            'bandwidth': 1220.89
         },
-        enums.bandpass.I : {
+        enums.bandpass.I: {
             'source': 'CTIO/SOI.bessel_I',
-            'central_wave' : 8748.91,
-            'bandwidth' : 2940.57
+            'central_wave': 8748.91,
+            'bandwidth': 2940.57
         },
-        enums.bandpass.J : {
+        enums.bandpass.J: {
             'source': 'CTIO/ANDICAM/J',
-            'central_wave' : 12457.00,
-            'bandwidth' : 1608.86
+            'central_wave': 12457.00,
+            'bandwidth': 1608.86
         },
-        enums.bandpass.H : {
+        enums.bandpass.H: {
             'source': 'CTIO/ANDICAM/H',
-            'central_wave' : 16333.11,
-            'bandwidth' : 2969.21
+            'central_wave': 16333.11,
+            'bandwidth': 2969.21
         },
-        enums.bandpass.K : {
+        enums.bandpass.K: {
             'source': 'CTIO/ANDICAM/K',
-            'central_wave' : 21401.72,
-            'bandwidth' : 2894.54
+            'central_wave': 21401.72,
+            'bandwidth': 2894.54
         },
-        enums.bandpass.u : {
-            'source' : 'CTIO/DECam.u_filter',
-            'central_wave' : 3552.98,
-            'bandwidth' : 885.05
+        enums.bandpass.u: {
+            'source': 'CTIO/DECam.u_filter',
+            'central_wave': 3552.98,
+            'bandwidth': 885.05
         },
-        enums.bandpass.g : {
-            'source' : 'CTIO/DECam.g_filter',
-            'central_wave' : 4730.50,
-            'bandwidth' : 1503.06
+        enums.bandpass.g: {
+            'source': 'CTIO/DECam.g_filter',
+            'central_wave': 4730.50,
+            'bandwidth': 1503.06
         },
-        enums.bandpass.r : {
-            'source' : 'CTIO/DECam.r_filter',
-            'central_wave' : 6415.40,
-            'bandwidth' : 1487.58
+        enums.bandpass.r: {
+            'source': 'CTIO/DECam.r_filter',
+            'central_wave': 6415.40,
+            'bandwidth': 1487.58
         },
-        enums.bandpass.i : {
-            'source' : 'CTIO/DECam.i_filter',
-            'central_wave' : 7836.21,
-            'bandwidth' : 1468.29
+        enums.bandpass.i: {
+            'source': 'CTIO/DECam.i_filter',
+            'central_wave': 7836.21,
+            'bandwidth': 1468.29
         },
-        enums.bandpass.z : {
-            'source' : 'CTIO/DECam.z_filter',
-            'central_wave' : 9258.37,
-            'bandwidth' : 1521.09
+        enums.bandpass.z: {
+            'source': 'CTIO/DECam.z_filter',
+            'central_wave': 9258.37,
+            'bandwidth': 1521.09
         },
-        enums.bandpass.UVW1 : {
-            'source' : 'Swift/UVOT.UVW1',
-            'central_wave' : 2629.35,
-            'bandwidth' : 656.60
+        enums.bandpass.UVW1: {
+            'source': 'Swift/UVOT.UVW1',
+            'central_wave': 2629.35,
+            'bandwidth': 656.60
         },
-        enums.bandpass.UVW2 : {
-            'source' : 'Swift/UVOT.UVW2',
-            'central_wave' : 1967.37,
-            'bandwidth' : 584.89
+        enums.bandpass.UVW2: {
+            'source': 'Swift/UVOT.UVW2',
+            'central_wave': 1967.37,
+            'bandwidth': 584.89
         },
-        enums.bandpass.UVM2 : {
-            'source' : 'Swift/UVOT.UVM2',
-            'central_wave' : 2259.84,
-            'bandwidth' : 527.13
+        enums.bandpass.UVM2: {
+            'source': 'Swift/UVOT.UVM2',
+            'central_wave': 2259.84,
+            'bandwidth': 527.13
         },
-        enums.bandpass.XRT : {
-            'source' : 'Manual calculation from 0.3-10keV',
-            'central_wave' : 21.2839,
-            'bandwidth' : 20.0441
+        enums.bandpass.XRT: {
+            'source': 'Manual calculation from 0.3-10keV',
+            'central_wave': 21.2839,
+            'bandwidth': 20.0441
         },
-        enums.bandpass.clear : {
-            'source' : 'WHT/ULTRACAM.clear',
-            'central_wave' : 6977.45,
-            'bandwidth' : 2757.0
+        enums.bandpass.clear: {
+            'source': 'WHT/ULTRACAM.clear',
+            'central_wave': 6977.45,
+            'bandwidth': 2757.0
         },
-        enums.bandpass.open : {
-            'source' : 'Coverage from 4000A-10000A',
-            'central_wave' : 7000,
-            'bandwidth' : 3000
+        enums.bandpass.open: {
+            'source': 'Coverage from 4000A-10000A',
+            'central_wave': 7000,
+            'bandwidth': 3000
         },
-        enums.bandpass.UHF : {
-            'source' : 'manual conversion from 0.03-0.3GHz',
-            'central_wave' : 54961950633.331505,
-            'bandwidth' : 44968868699.998505
+        enums.bandpass.UHF: {
+            'source': 'manual conversion from 0.03-0.3GHz',
+            'central_wave': 54961950633.331505,
+            'bandwidth': 44968868699.998505
         },
-        enums.bandpass.VHF : {
-            'source' : 'manual conversion from 0.3-1.0GHz',
-            'central_wave' : 6495503256.6665,
-            'bandwidth' : 3497578676.6665
+        enums.bandpass.VHF: {
+            'source': 'manual conversion from 0.3-1.0GHz',
+            'central_wave': 6495503256.6665,
+            'bandwidth': 3497578676.6665
         },
-        enums.bandpass.L : {
-            'source' : 'manual conversion from 1-2GHz',
-            'central_wave' : 2248443435.0,
-            'bandwidth' : 749481145.0
+        enums.bandpass.L: {
+            'source': 'manual conversion from 1-2GHz',
+            'central_wave': 2248443435.0,
+            'bandwidth': 749481145.0
         },
-        enums.bandpass.S : {
-            'source' : 'manual conversion from 2-4GHz',
-            'central_wave' : 1124221715.25,
-            'bandwidth' : 374740574.75
+        enums.bandpass.S: {
+            'source': 'manual conversion from 2-4GHz',
+            'central_wave': 1124221715.25,
+            'bandwidth': 374740574.75
         },
-        enums.bandpass.C : {
-            'source' : 'manual conversion from 4-8GHz',
-            'central_wave' : 936851431.25,
-            'bandwidth' : 562110858.75
+        enums.bandpass.C: {
+            'source': 'manual conversion from 4-8GHz',
+            'central_wave': 936851431.25,
+            'bandwidth': 562110858.75
         },
-        enums.bandpass.X : {
-            'source' : 'manual conversion from 8-12GHz',
-            'central_wave' : 312283810.41665,
-            'bandwidth' : 62456762.08335
+        enums.bandpass.X: {
+            'source': 'manual conversion from 8-12GHz',
+            'central_wave': 312283810.41665,
+            'bandwidth': 62456762.08335
         },
-        enums.bandpass.TESS : {
-            'source' : 'TESS/TESS.Red',
-            'central_wave' : 7917.84,
-            'bandwidth' : 4010.94
+        enums.bandpass.TESS: {
+            'source': 'TESS/TESS.Red',
+            'central_wave': 7917.84,
+            'bandwidth': 4010.94
         },
-        #enums.bandpass.other: {
+        # enums.bandpass.other: {
         #    'source' : None,
         #    'central_wave' : None,
         #    'bandwidth' : None
-        #},
+        # },
         enums.bandpass.BAT: {
-            'source' : 'manual conversion from 15-350keV',
-            'central_wave' : 0.431,
-            'bandwidth' : 0.3956
+            'source': 'manual conversion from 15-350keV',
+            'central_wave': 0.431,
+            'bandwidth': 0.3956
         },
         enums.bandpass.HESS: {
-            'source' : 'manual conversion from 10geV-50TeV',
-            'central_wave' : 6.200239850000001e-06,
-            'bandwidth' : 6.197760150000001e-06
+            'source': 'manual conversion from 10geV-50TeV',
+            'central_wave': 6.200239850000001e-06,
+            'bandwidth': 6.197760150000001e-06
         },
         enums.bandpass.WISEL: {
-            'source' : 'Iair figure he sent me in slack ~ 3700-7000A',
-            'central_wave' : 5350,
-            'bandwidth' : 1650
+            'source': 'Iair figure he sent me in slack ~ 3700-7000A',
+            'central_wave': 5350,
+            'bandwidth': 1650
         },
         enums.bandpass.q: {
             'source': 'Danielle Piertese',
-            'central_wave' : 5800,
-            'bandwidth' : 2800
+            'central_wave': 5800,
+            'bandwidth': 2800
         }
     }
-
 
     '''
         method that returns the most likely bandpass name from central_wave and bandwidth
     '''
+
     @staticmethod
     def bandEnumFromCentralWaveBandwidth(central_wave, bandwidth):
         mindict = {}
         for band in SpectralRangeHandler.bandpass_wavelength_dictionary:
             mindict[band] = {
-                'cw_diff' : abs(central_wave-SpectralRangeHandler.bandpass_wavelength_dictionary[band]['central_wave']),
-                'bw_diff' : abs(bandwidth-SpectralRangeHandler.bandpass_wavelength_dictionary[band]['bandwidth'])
+                'cw_diff': abs(
+                    central_wave - SpectralRangeHandler.bandpass_wavelength_dictionary[band]['central_wave']),
+                'bw_diff': abs(bandwidth - SpectralRangeHandler.bandpass_wavelength_dictionary[band]['bandwidth'])
             }
 
         min_cw_diff = min(x['cw_diff'] for x in mindict.values())
 
-        bandname = [x for x,y in mindict.items() if y['cw_diff'] == min_cw_diff][0]
+        bandname = [x for x, y in mindict.items() if y['cw_diff'] == min_cw_diff][0]
         return bandname
-
 
     '''
         method that returns the corresponding wave range to frequency in Hz
     '''
+
     @staticmethod
     def wavetoFrequency(central_wave=None, bandwidth=None, bandpass=None):
         wave_min, wave_max = SpectralRangeHandler.wavetoWaveRange(central_wave, bandwidth, bandpass)
 
-        freq_max = 2997924580000000000.0/wave_min
-        freq_min = 2997924580000000000.0/wave_max
+        freq_max = 2997924580000000000.0 / wave_min
+        freq_min = 2997924580000000000.0 / wave_max
 
         return freq_min, freq_max
-
 
     '''
         method that returns the corresponding wave range to energy in eV
     '''
+
     @staticmethod
     def wavetoEnergy(central_wave=None, bandwidth=None, bandpass=None):
         wave_min, wave_max = SpectralRangeHandler.wavetoWaveRange(central_wave, bandwidth, bandpass)
 
-        ev_max = 12398/wave_min
-        ev_min = 12398/wave_max
+        ev_max = 12398 / wave_min
+        ev_min = 12398 / wave_max
 
         return ev_min, ev_max
-
 
     '''
         method that returns the wavelength range from the central_wave and bandwidth, or bandpass
     '''
+
     @staticmethod
     def wavetoWaveRange(central_wave=None, bandwidth=None, bandpass=None):
         if central_wave is None and bandwidth is None and bandpass is not None:
@@ -355,40 +364,40 @@ class SpectralRangeHandler:
             central_wave = bp['central_wave']
             bandwidth = bp['bandwidth']
 
-        wave_min = central_wave - (bandwidth/2.0)
-        wave_max = central_wave + (bandwidth/2.0)
+        wave_min = central_wave - (bandwidth / 2.0)
+        wave_max = central_wave + (bandwidth / 2.0)
 
         return wave_min, wave_max
-
 
     '''
         method that returns the central_wave and bandwidth from a given energy range (must be eV)
             higher energy corresponds to lower wavelength
             lower energy corresponds to higher wavelength
     '''
+
     @staticmethod
     def wavefromEnergyRange(min_energy, max_energy):
 
-        wave_min = 12398/max_energy
-        wave_max = 12398/max_energy
+        wave_min = 12398 / max_energy
+        wave_max = 12398 / max_energy
 
-        bandwidth = 0.5*(wave_max-wave_min)
+        bandwidth = 0.5 * (wave_max - wave_min)
         central_wave = wave_min + bandwidth
 
         return central_wave, bandwidth
-
 
     '''
         method that returns the central_wave and bandwidth from a given frequency range (must be Hz)
             higher frequency corresponds to lower wavelength
             lower frequency corresponds to higher wavelength
     '''
+
     @staticmethod
     def wavefromFrequencyRange(min_freq, max_freq):
-        wave_min = 2997924580000000000.0/max_freq
-        wave_max = 2997924580000000000/min_freq
+        wave_min = 2997924580000000000.0 / max_freq
+        wave_max = 2997924580000000000 / min_freq
 
-        bandwidth = 0.5*(wave_max-wave_min)
+        bandwidth = 0.5 * (wave_max - wave_min)
         central_wave = wave_min + bandwidth
 
         return central_wave, bandwidth
@@ -399,7 +408,7 @@ def load_user(id):
     return users.query.get(int(id))
 
 
-#API Models
+# API Models
 
 class users(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -411,7 +420,7 @@ class users(UserMixin, db.Model):
     email = db.Column(db.String(100))
     api_token = db.Column(db.String(128))
     verification_key = db.Column(db.String(128))
-    verified =  db.Column(db.Boolean)
+    verified = db.Column(db.Boolean)
 
     def get_id(self):
         return self.id
@@ -453,7 +462,7 @@ class users(UserMixin, db.Model):
 class usergroups(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     userid = db.Column(db.Integer)
-    groupid  = db.Column(db.Integer)
+    groupid = db.Column(db.Integer)
     role = db.Column(db.String(25))
 
 
@@ -472,7 +481,7 @@ class useractions(db.Model):
     jsonvals = db.Column(db.JSON)
     method = db.Column(db.String(24))
 
-    def write_action(request, current_user, jsonvals = None):
+    def write_action(request, current_user, jsonvals=None):
         if not app.debug:
             try:
                 ipaddress = None
@@ -488,12 +497,12 @@ class useractions(db.Model):
                         jsonvals = {}
 
                 ua = useractions(
-                    userid = current_user.get_id(),
-                    ipaddress = ipaddress,
-                    url = request.url,
-                    time = datetime.datetime.now(),
-                    jsonvals = jsonvals,
-                    method = request.method
+                    userid=current_user.get_id(),
+                    ipaddress=ipaddress,
+                    url=request.url,
+                    time=datetime.datetime.now(),
+                    jsonvals=jsonvals,
+                    method=request.method
                 )
                 db.session.add(ua)
                 db.session.commit()
@@ -507,7 +516,7 @@ class instrument(db.Model):
     nickname = db.Column(db.String(25))
     instrument_type = db.Column(db.Enum(enums.instrument_type))
     datecreated = db.Column(db.DateTime)
-    #footprint = db.Column(Geography('POLYGON', srid=4326))
+    # footprint = db.Column(Geography('POLYGON', srid=4326))
     submitterid = db.Column(db.Integer)
 
     @property
@@ -536,12 +545,12 @@ class instrument(db.Model):
         if u == "deg":
             scale = 1
         if u == "arcmin":
-            scale = 1/60.0
+            scale = 1 / 60.0
         if u == "arcsec":
-            scale = 1/(60.0*60.0)
+            scale = 1 / (60.0 * 60.0)
 
         if form.footprint_type.data == 'Rectangular':
-            h,w = form.height.data, form.width.data
+            h, w = form.height.data, form.width.data
             if h is None or w is None:
                 v.errors.append('Height and Width are required for Rectangular shape')
                 return [v]
@@ -550,8 +559,8 @@ class instrument(db.Model):
                 return [v]
 
             vertices = []
-            half_h = round(0.5*float(h)*scale, 4)
-            half_w = round(0.5*float(w)*scale, 4)
+            half_h = round(0.5 * float(h) * scale, 4)
+            half_w = round(0.5 * float(w) * scale, 4)
             vertices.append([-half_w, half_h])
             vertices.append([half_w, half_h])
             vertices.append([half_w, -half_h])
@@ -572,15 +581,15 @@ class instrument(db.Model):
                 v.errors.append('Radius must be decimal')
                 return [v]
 
-            r = float(r)*float(scale)
+            r = float(r) * float(scale)
             vertices = []
-            steps = len(range(0,360, int(360/20)))
-            ang = float(360/(steps))
+            steps = len(range(0, 360, int(360 / 20)))
+            ang = float(360 / (steps))
 
-            for a in range(0,steps):
+            for a in range(0, steps):
                 a = float(a)
-                x = r*math.cos(math.radians(90-a*ang))
-                y = r*math.sin(math.radians(90-a*ang))
+                x = r * math.cos(math.radians(90 - a * ang))
+                y = r * math.sin(math.radians(90 - a * ang))
                 if abs(x) < 1e-10:
                     x = 0.0
                 if abs(y) < 1e-10:
@@ -736,11 +745,10 @@ class pointing(db.Model):
             thismin, thismax = SpectralRangeHandler.wavetoFrequency(cls.central_wave, cls.bandwidth)
 
         return and_(thismin >= spectral_min, thismax <= spectral_max)
-        #if thismin >= spectral_min and thismax <= spectral_max:
+        # if thismin >= spectral_min and thismax <= spectral_max:
         #    return True
 
-        #return False
-
+        # return False
 
     @staticmethod
     def pointings_from_IDS(ids, filter=[]):
@@ -773,8 +781,7 @@ class pointing(db.Model):
 
         return pointing_returns
 
-
-    def from_json(self, p, dbinsts, userid, planned_pointings, otherpointings): #dbusers):
+    def from_json(self, p, dbinsts, userid, planned_pointings, otherpointings):  # dbusers):
         v = valid_mapping()
 
         PLANNED = False
@@ -784,7 +791,7 @@ class pointing(db.Model):
             planned_pointing = planned_pointings[str(pointingid)]
 
             if planned_pointing.status == enums.pointing_status.completed or planned_pointing.status == enums.pointing_status.cancelled:
-                v.errors.append('This pointing has already been '+planned_pointing.status.name)
+                v.errors.append('This pointing has already been ' + planned_pointing.status.name)
 
             self.position = planned_pointing.position
             self.depth = planned_pointing.depth
@@ -802,7 +809,8 @@ class pointing(db.Model):
             validstatusints = [int(b) for b in enums.pointing_status if b.name != 'cancelled']
             validstatusstr = [str(b.name) for b in enums.pointing_status if b.name != 'cancelled']
             if userstatus in validstatusints or userstatus in validstatusstr:
-                statusenum = [ps for ps in enums.pointing_status if userstatus == int(ps) or userstatus == str(ps.name)][0]
+                statusenum = \
+                [ps for ps in enums.pointing_status if userstatus == int(ps) or userstatus == str(ps.name)][0]
                 self.status = statusenum
         elif not PLANNED:
             self.status = enums.pointing_status.completed
@@ -816,7 +824,8 @@ class pointing(db.Model):
                 if all([x in pos for x in ["POINT", "(", ")", " "]]) and "," not in pos:
                     self.position = p['position']
                 else:
-                    v.errors.append("Invalid position argument. Must be decimal format ra/RA, dec/DEC, or geometry type \"POINT(RA DEC)\"")
+                    v.errors.append(
+                        "Invalid position argument. Must be decimal format ra/RA, dec/DEC, or geometry type \"POINT(RA DEC)\"")
         elif not PLANNED:
             if 'ra' in p or 'RA' in p:
                 ra = p['ra'] if 'ra' in p else p['RA']
@@ -833,9 +842,10 @@ class pointing(db.Model):
                 dec = None
 
             if ra is None or dec is None:
-                v.errors.append("Invalid position argument. Must be decimal format ra/RA, dec/DEC, or geometry type \"POINT(RA DEC)\"")
+                v.errors.append(
+                    "Invalid position argument. Must be decimal format ra/RA, dec/DEC, or geometry type \"POINT(RA DEC)\"")
             else:
-                self.position = "POINT("+str(ra)+" "+str(dec)+")"
+                self.position = "POINT(" + str(ra) + " " + str(dec) + ")"
 
         if 'instrumentid' in p and not PLANNED:
             inst = p['instrumentid']
@@ -896,7 +906,8 @@ class pointing(db.Model):
             try:
                 self.time = date_parse(p['time'])
             except:  # noqa: E722
-                v.errors.append("Error parsing date. Should be %Y-%m-%dT%H:%M:%S.%f format. e.g. 2019-05-01T12:00:00.00")
+                v.errors.append(
+                    "Error parsing date. Should be %Y-%m-%dT%H:%M:%S.%f format. e.g. 2019-05-01T12:00:00.00")
         elif self.status == enums.pointing_status.planned:
             v.errors.append("Field \"time\" is required for when the pointing is planned to be observed")
         elif self.status == enums.pointing_status.completed:
@@ -918,15 +929,16 @@ class pointing(db.Model):
                 if user_unit in validwavelengthunits_ints or user_unit in validwavelengthunits_str:
                     wuenum = [w for w in enums.wavelength_units if int(w) == user_unit or str(w.name) == user_unit][0]
                     scale = enums.wavelength_units.get_scale(wuenum)
-                    wave_min = wave_min*scale
-                    wave_max = wave_max*scale
+                    wave_min = wave_min * scale
+                    wave_max = wave_max * scale
 
-                    self.bandwidth = 0.5*(wave_max-wave_min)
+                    self.bandwidth = 0.5 * (wave_max - wave_min)
                     self.central_wave = wave_min + self.bandwidth
                     self.band = SpectralRangeHandler.bandEnumFromCentralWaveBandwidth(self.central_wave, self.bandwidth)
                     p['band'] = self.band
                 else:
-                    v.errors.append('Wavelength Unit is required, valid units are \'angstrom\', \'nanometer\', and \'micron\'')
+                    v.errors.append(
+                        'Wavelength Unit is required, valid units are \'angstrom\', \'nanometer\', and \'micron\'')
             except:  # noqa: E722
                 v.errors.append('Error parsing \'wavelength_regime\'. required format is a list: \'[low, high]\'')
 
@@ -943,17 +955,17 @@ class pointing(db.Model):
                 if user_unit in validfrequnits_ints or user_unit in validfrequnits_str:
                     fuenum = [w for w in enums.frequency_units if int(w) == user_unit or str(w.name) == user_unit][0]
                     scale = enums.frequency_units.get_scale(fuenum)
-                    min_freq = min_freq*scale
-                    max_freq = max_freq*scale
+                    min_freq = min_freq * scale
+                    max_freq = max_freq * scale
 
                     self.central_wave, self.bandwidth = SpectralRangeHandler.wavefromFrequencyRange(min_freq, max_freq)
                     self.band = SpectralRangeHandler.bandEnumFromCentralWaveBandwidth(self.central_wave, self.bandwidth)
                     p['band'] = self.band
                 else:
-                    v.errors.append('Frequency Unit is required, valid units are \'Hz\', \'kHz\', \'MHz\', \'GHz\', and \'THz\'')
+                    v.errors.append(
+                        'Frequency Unit is required, valid units are \'Hz\', \'kHz\', \'MHz\', \'GHz\', and \'THz\'')
             except:  # noqa: E722
-               v.errors.apend('Error parsing \'frequency_regime\'. required format is a list: \'[low, high]\'')
-
+                v.errors.apend('Error parsing \'frequency_regime\'. required format is a list: \'[low, high]\'')
 
         if "energy_regime" in p and "energy_unit" in p and not PLANNED:
             try:
@@ -967,14 +979,15 @@ class pointing(db.Model):
                 if user_unit in validenergyunits_ints or user_unit in validenergyunits_str:
                     euenum = [w for w in enums.energy_units if int(w) == user_unit or str(w.name) == user_unit][0]
                     scale = enums.energy_units.get_scale(euenum)
-                    min_energy = min_energy*scale
-                    max_energy = max_energy*scale
+                    min_energy = min_energy * scale
+                    max_energy = max_energy * scale
 
                     self.central_wave, self.bandwidth = SpectralRangeHandler.wavefromEnergyRange(min_energy, max_energy)
                     self.band = SpectralRangeHandler.bandEnumFromCentralWaveBandwidth(self.central_wave, self.bandwidth)
                     p['band'] = self.band
                 else:
-                    v.errors.append('\'energy_unit\' is required, valid units are \'eV\', \'keV\', \'MeV\', \'GeV\', and \'TeV\'')
+                    v.errors.append(
+                        '\'energy_unit\' is required, valid units are \'eV\', \'keV\', \'MeV\', \'GeV\', and \'TeV\'')
             except:  # noqa: E722
                 v.errors.apend('Error parsing \'energy_regime\'. required format is a list: \'[low, high]\'')
             pass
@@ -993,7 +1006,6 @@ class pointing(db.Model):
             else:
                 v.errors.append('Error parsing \'bandwidth\'. required format is decimal')
 
-
         if "band" in p and not PLANNED:
             validbandints = [int(b) for b in enums.bandpass]
             validbandstr = [str(b.name) for b in enums.bandpass]
@@ -1006,17 +1018,19 @@ class pointing(db.Model):
                     self.central_wave = bandinfo['central_wave']
                     self.bandwidth = bandinfo['bandwidth']
             else:
-                v.errors.append("Field \"band\" is invalid, or manually state the wavelength, frequency, or energy regime of your observation")
+                v.errors.append(
+                    "Field \"band\" is invalid, or manually state the wavelength, frequency, or energy regime of your observation")
 
         if self.bandwidth is None or self.central_wave is None:
-            v.errors.append('Error Parsing Bandpass/Energy/Frequency information. Please refer to http://treasuremap.space/documentation for further assistance')
+            v.errors.append(
+                'Error Parsing Bandpass/Energy/Frequency information. Please refer to http://treasuremap.space/documentation for further assistance')
         elif self.band is None:
             self.band = SpectralRangeHandler.bandEnumFromCentralWaveBandwidth(self.central_wave, self.bandwidth)
 
         if function.pointing_crossmatch(self, otherpointings):
-           v.errors.append("Pointing already submitted")
+            v.errors.append("Pointing already submitted")
 
-        #valid if no errors
+        # valid if no errors
         v.valid = len(v.errors) == 0
         return v
 
@@ -1115,44 +1129,46 @@ class gw_alert(db.Model):
         akeys = args.keys()
 
         alert = gw_alert(
-            graceid          = args['graceid'] if 'graceid' in akeys else 'ERROR',
-            alternateid      = args['alternateid'] if 'alternateid' in akeys else '',
-            role             = args['role'] if 'role' in akeys else 'ERROR',
-            observing_run    = args['observing_run'] if 'observing_run' in akeys else 'ERROR',
-            description      = args['description'] if 'description' in akeys else 'ERROR',
-            alert_type       = args['alert_type'] if 'alert_type' in akeys else 'ERROR',
-            datecreated      = args['datecreated'] if 'datecreated' in akeys else datetime.datetime.now(),
-            packet_type      = args['packet_type'] if 'packet_type' in akeys else 0,
-            far              = args['far'] if 'far' in akeys else 0.0,
-            group            = args['group'] if 'group' in akeys else '',
-            pipeline         = args['pipeline'] if 'pipeline' in akeys else '',
-            search           = args['search'] if 'search' in akeys else '',
-            detectors        = args['detectors'] if 'detectors' in akeys else '',
-            prob_hasns       = args['prob_hasns'] if 'prob_hasns' in akeys else 0.0,
-            prob_hasremenant = args['prob_hasremenant'] if 'prob_hasremenant' in akeys else 0.0,
-            prob_gap         = args['prob_gap'] if 'prob_gap' in akeys else 0.0,
-            prob_bns         = args['prob_bns'] if 'prob_bns' in akeys else 0.0,
-            prob_nsbh        = args['prob_nsbh'] if 'prob_nsbh' in akeys else 0.0,
-            prob_bbh         = args['prob_bbh'] if 'prob_bbh' in akeys else 0.0,
-            prob_terrestrial = args['prob_terrestrial'] if 'prob_terrestrial' in akeys else 0.0,
-            skymap_fits_url  = args['skymap_fits_url'] if 'skymap_fits_url' in akeys else '',
-            avgra            = args['avgra'] if 'avgra' in akeys else 0.0,
-            avgdec           = args['avgdec'] if 'avgdec' in akeys else 0.0,
-            time_of_signal   = args['time_of_signal'] if 'time_of_signal' in akeys else datetime.datetime(year=1991, month=12, day=23),
-            distance         = args['distance'] if 'distance' in akeys else 0.0,
-            distance_error   = args['distance_error'] if 'distance_error' in akeys else 0.0,
-            timesent         = args['timesent'] if 'timesent' in akeys else datetime.datetime(year=1991, month=12, day=23),
-            centralfreq      = args['centralfreq'] if 'centralfreq' in akeys else 0.0,
-            duration         = args['duration'] if 'duration' in akeys else 0.0,
-            area_90          = args['area_90'] if 'area_90' in akeys else 0.0,
-            area_50          = args['area_50'] if 'area_50' in akeys else 0.0,
-            gcn_notice_id    = args['gcn_notice_id'] if 'gcn_notice_id' in akeys else 0,
-            ivorn            = args['ivorn'] if 'ivorn' in akeys else '',
-            ext_coinc_observatory             = args['ext_coinc_observatory'] if 'ext_coinc_observatory' in akeys else '',
-            ext_coinc_search                  = args['ext_coinc_search'] if 'ext_coinc_search' in akeys else '',
-            time_difference                   = args['time_difference'] if 'time_difference' in akeys else 0.0,
-            time_coincidence_far              = args['time_coincidence_far'] if 'time_coincidence_far' in akeys else 0.0,
-            time_sky_position_coincidence_far = args['time_sky_position_coincidence_far'] if 'time_sky_position_coincidence_far' in akeys else 0.0,
+            graceid=args['graceid'] if 'graceid' in akeys else 'ERROR',
+            alternateid=args['alternateid'] if 'alternateid' in akeys else '',
+            role=args['role'] if 'role' in akeys else 'ERROR',
+            observing_run=args['observing_run'] if 'observing_run' in akeys else 'ERROR',
+            description=args['description'] if 'description' in akeys else 'ERROR',
+            alert_type=args['alert_type'] if 'alert_type' in akeys else 'ERROR',
+            datecreated=args['datecreated'] if 'datecreated' in akeys else datetime.datetime.now(),
+            packet_type=args['packet_type'] if 'packet_type' in akeys else 0,
+            far=args['far'] if 'far' in akeys else 0.0,
+            group=args['group'] if 'group' in akeys else '',
+            pipeline=args['pipeline'] if 'pipeline' in akeys else '',
+            search=args['search'] if 'search' in akeys else '',
+            detectors=args['detectors'] if 'detectors' in akeys else '',
+            prob_hasns=args['prob_hasns'] if 'prob_hasns' in akeys else 0.0,
+            prob_hasremenant=args['prob_hasremenant'] if 'prob_hasremenant' in akeys else 0.0,
+            prob_gap=args['prob_gap'] if 'prob_gap' in akeys else 0.0,
+            prob_bns=args['prob_bns'] if 'prob_bns' in akeys else 0.0,
+            prob_nsbh=args['prob_nsbh'] if 'prob_nsbh' in akeys else 0.0,
+            prob_bbh=args['prob_bbh'] if 'prob_bbh' in akeys else 0.0,
+            prob_terrestrial=args['prob_terrestrial'] if 'prob_terrestrial' in akeys else 0.0,
+            skymap_fits_url=args['skymap_fits_url'] if 'skymap_fits_url' in akeys else '',
+            avgra=args['avgra'] if 'avgra' in akeys else 0.0,
+            avgdec=args['avgdec'] if 'avgdec' in akeys else 0.0,
+            time_of_signal=args['time_of_signal'] if 'time_of_signal' in akeys else datetime.datetime(year=1991,
+                                                                                                      month=12, day=23),
+            distance=args['distance'] if 'distance' in akeys else 0.0,
+            distance_error=args['distance_error'] if 'distance_error' in akeys else 0.0,
+            timesent=args['timesent'] if 'timesent' in akeys else datetime.datetime(year=1991, month=12, day=23),
+            centralfreq=args['centralfreq'] if 'centralfreq' in akeys else 0.0,
+            duration=args['duration'] if 'duration' in akeys else 0.0,
+            area_90=args['area_90'] if 'area_90' in akeys else 0.0,
+            area_50=args['area_50'] if 'area_50' in akeys else 0.0,
+            gcn_notice_id=args['gcn_notice_id'] if 'gcn_notice_id' in akeys else 0,
+            ivorn=args['ivorn'] if 'ivorn' in akeys else '',
+            ext_coinc_observatory=args['ext_coinc_observatory'] if 'ext_coinc_observatory' in akeys else '',
+            ext_coinc_search=args['ext_coinc_search'] if 'ext_coinc_search' in akeys else '',
+            time_difference=args['time_difference'] if 'time_difference' in akeys else 0.0,
+            time_coincidence_far=args['time_coincidence_far'] if 'time_coincidence_far' in akeys else 0.0,
+            time_sky_position_coincidence_far=args[
+                'time_sky_position_coincidence_far'] if 'time_sky_position_coincidence_far' in akeys else 0.0,
         )
         return alert
 
@@ -1162,18 +1178,18 @@ class gw_alert(db.Model):
             return 'None (detected as burst)'
 
         probs = [
-            {"prob":self.prob_bns if self.prob_bns else 0.0, "class":"BNS"},
-            {"prob":self.prob_nsbh if self.prob_nsbh else 0.0, "class":"NSBH"},
-            {"prob":self.prob_bbh if self.prob_bbh else 0.0, "class":"BBH"},
-            {"prob":self.prob_terrestrial if self.prob_terrestrial else 0.0, "class":"Terrestrial"},
-            {"prob":self.prob_gap if self.prob_gap else 0.0, "class":"Mass Gap"}
+            {"prob": self.prob_bns if self.prob_bns else 0.0, "class": "BNS"},
+            {"prob": self.prob_nsbh if self.prob_nsbh else 0.0, "class": "NSBH"},
+            {"prob": self.prob_bbh if self.prob_bbh else 0.0, "class": "BBH"},
+            {"prob": self.prob_terrestrial if self.prob_terrestrial else 0.0, "class": "Terrestrial"},
+            {"prob": self.prob_gap if self.prob_gap else 0.0, "class": "Mass Gap"}
         ]
 
-        sorted_probs = sorted([x for x in probs if x['prob'] > 0.01], key = lambda i: i['prob'], reverse=True)
+        sorted_probs = sorted([x for x in probs if x['prob'] > 0.01], key=lambda i: i['prob'], reverse=True)
 
         classification = ""
         for p in sorted_probs:
-            classification += p["class"] + ": ("+str(round(100*p['prob'], 1))+"%) "
+            classification += p["class"] + ": (" + str(round(100 * p['prob'], 1)) + "%) "
 
         return classification
 
@@ -1187,8 +1203,8 @@ class gw_alert(db.Model):
 
     @staticmethod
     def graceidfromalternate(graceid):
-        #if there is an input alternate id for this event, it will find the original graceid
-        #else it will return the input graceid
+        # if there is an input alternate id for this event, it will find the original graceid
+        # else it will return the input graceid
 
         alternateids = db.session.query(gw_alert).filter(
             gw_alert.alternateid == graceid
@@ -1310,7 +1326,7 @@ class doi_author(db.Model):
 
         creators = []
         for a in authors:
-            a_dict = { "name":a.name, "affiliation":a.affiliation }
+            a_dict = {"name": a.name, "affiliation": a.affiliation}
             if a.orcid:
                 a_dict['orcid'] = a.orcid
             if a.gnd:
@@ -1328,9 +1344,9 @@ class doi_author(db.Model):
                 form.getlist('affiliation'),
                 form.getlist('orcid'),
                 form.getlist('gnd')
-            ):
+        ):
 
-            if  str(aid) == "" or str(aid) == "None":
+            if str(aid) == "" or str(aid) == "None":
                 authors.append(
                     doi_author(
                         name=an,
@@ -1388,7 +1404,7 @@ class gw_galaxy_entry(db.Model):
     def parse(self):
         return parse_model(self, self.__class__)
 
-    def from_json(self, p): #dbusers):
+    def from_json(self, p):  # dbusers):
         v = valid_mapping()
 
         if 'position' in p:
@@ -1396,7 +1412,8 @@ class gw_galaxy_entry(db.Model):
             if all([x in pos for x in ["POINT", "(", ")", " "]]) and "," not in pos:
                 self.position = p['position']
             else:
-                v.errors.append("Invalid position argument. Must be decimal format ra/RA, dec/DEC, or geometry type \"POINT(RA DEC)\"")
+                v.errors.append(
+                    "Invalid position argument. Must be decimal format ra/RA, dec/DEC, or geometry type \"POINT(RA DEC)\"")
         else:
             if 'ra' in p or 'RA' in p:
                 ra = p['ra'] if 'ra' in p else p['RA']
@@ -1413,9 +1430,10 @@ class gw_galaxy_entry(db.Model):
                 dec = None
 
             if ra is None or dec is None:
-                v.errors.append("Invalid position argument. Must be decimal format ra/RA, dec/DEC, or geometry type \"POINT(RA, DEC)\"")
+                v.errors.append(
+                    "Invalid position argument. Must be decimal format ra/RA, dec/DEC, or geometry type \"POINT(RA, DEC)\"")
             else:
-                self.position = "POINT("+str(ra)+" "+str(dec)+")"
+                self.position = "POINT(" + str(ra) + " " + str(dec) + ")"
 
         if 'score' in p:
             if isFloat(p['score']):
@@ -1443,8 +1461,8 @@ class gw_galaxy_entry(db.Model):
 
         v.valid = len(v.errors) == 0
         return v
-    
-    
+
+
 class icecube_notice(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     ref_id = db.Column(db.String)
@@ -1469,31 +1487,36 @@ class icecube_notice(db.Model):
     @property
     def parse(self):
         return parse_model(self, self.__class__)
-    
+
     @staticmethod
     def from_json(args):
         akeys = args.keys()
 
         notice = icecube_notice(
-            graceid                     = args['graceid'] if 'graceid' in akeys else 'ERROR',
-            ref_id                      = args['ref_id'] if 'ref_id' in akeys else 'ERROR',
-            alert_datetime              = args['alert_datetime'] if 'alert_datetime' in akeys else datetime.datetime(year=1991, month=12, day=23),
-            observation_start           = args['observation_start'] if 'observation_start' in akeys else datetime.datetime(year=1991, month=12, day=23),
-            observation_stop            = args['observation_stop'] if 'observation_stop' in akeys else datetime.datetime(year=1991, month=12, day=23),
-            pval_generic                = args['pval_generic'] if 'pval_generic' in akeys else 0.0,
-            pval_bayesian               = args['pval_bayesian'] if 'pval_bayesian' in akeys else 0.0,
-            most_probable_direction_ra  = args['most_probable_direction_ra'] if 'most_probable_direction_ra' in akeys else 0.0,
-            most_probable_direction_dec = args['most_probable_direction_dec'] if 'most_probable_direction_dec' in akeys else 0.0,
-            flux_sens_low               = args['flux_sens_low'] if 'flux_sens_low' in akeys else 0.0,
-            flux_sens_high              = args['flux_sens_high'] if 'flux_sens_high' in akeys else 0.0,
-            sens_energy_range_low       = args['sens_energy_range_low'] if 'sens_energy_range_low' in akeys else 0.0,
-            sens_energy_range_high      = args['sens_energy_range_high'] if 'sens_energy_range_high' in akeys else 0.0,
-            datecreated                 = args['datecreated'] if 'datecreated' in akeys else datetime.datetime.now(),
+            graceid=args['graceid'] if 'graceid' in akeys else 'ERROR',
+            ref_id=args['ref_id'] if 'ref_id' in akeys else 'ERROR',
+            alert_datetime=args['alert_datetime'] if 'alert_datetime' in akeys else datetime.datetime(year=1991,
+                                                                                                      month=12, day=23),
+            observation_start=args['observation_start'] if 'observation_start' in akeys else datetime.datetime(
+                year=1991, month=12, day=23),
+            observation_stop=args['observation_stop'] if 'observation_stop' in akeys else datetime.datetime(year=1991,
+                                                                                                            month=12,
+                                                                                                            day=23),
+            pval_generic=args['pval_generic'] if 'pval_generic' in akeys else 0.0,
+            pval_bayesian=args['pval_bayesian'] if 'pval_bayesian' in akeys else 0.0,
+            most_probable_direction_ra=args[
+                'most_probable_direction_ra'] if 'most_probable_direction_ra' in akeys else 0.0,
+            most_probable_direction_dec=args[
+                'most_probable_direction_dec'] if 'most_probable_direction_dec' in akeys else 0.0,
+            flux_sens_low=args['flux_sens_low'] if 'flux_sens_low' in akeys else 0.0,
+            flux_sens_high=args['flux_sens_high'] if 'flux_sens_high' in akeys else 0.0,
+            sens_energy_range_low=args['sens_energy_range_low'] if 'sens_energy_range_low' in akeys else 0.0,
+            sens_energy_range_high=args['sens_energy_range_high'] if 'sens_energy_range_high' in akeys else 0.0,
+            datecreated=args['datecreated'] if 'datecreated' in akeys else datetime.datetime.now(),
         )
         return notice
-    
-    def already_exists(self):
 
+    def already_exists(self):
         other_notices = db.session.query(
             icecube_notice
         ).filter(
@@ -1510,7 +1533,7 @@ class icecube_notice(db.Model):
             return True
         return False
 
-    
+
 class icecube_notice_coinc_event(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     icecube_notice_id = db.Column(db.Integer)
@@ -1531,22 +1554,22 @@ class icecube_notice_coinc_event(db.Model):
     @property
     def parse(self):
         return parse_model(self, self.__class__)
-    
+
     @staticmethod
     def from_json(args):
         akeys = args.keys()
 
         event = icecube_notice_coinc_event(
-            icecube_notice_id       = args['icecube_notice_id'] if 'icecube_notice_id' in akeys else -999,
-            event_dt                = args['event_dt'] if 'event_dt' in akeys else 0.0,
-            ra                      = args['ra'] if 'ra' in akeys else 0.0,
-            dec                     = args['dec'] if 'dec' in akeys else 0.0,
-            containment_probability = args['containment_probability'] if 'containment_probability' in akeys else 0.0,
-            event_pval_generic      = args['event_pval_generic'] if 'event_pval_generic' in akeys else 0.0,
-            event_pval_bayesian     = args['event_pval_bayesian'] if 'event_pval_bayesian' in akeys else 0.0,
-            ra_uncertainty          = args['ra_uncertainty'] if 'ra_uncertainty' in akeys else 0.0,
-            uncertainty_shape       = args['uncertainty_shape'] if 'uncertainty_shape' in akeys else 0.0,
-            datecreated             = args['datecreated'] if 'datecreated' in akeys else datetime.datetime.now(),
+            icecube_notice_id=args['icecube_notice_id'] if 'icecube_notice_id' in akeys else -999,
+            event_dt=args['event_dt'] if 'event_dt' in akeys else 0.0,
+            ra=args['ra'] if 'ra' in akeys else 0.0,
+            dec=args['dec'] if 'dec' in akeys else 0.0,
+            containment_probability=args['containment_probability'] if 'containment_probability' in akeys else 0.0,
+            event_pval_generic=args['event_pval_generic'] if 'event_pval_generic' in akeys else 0.0,
+            event_pval_bayesian=args['event_pval_bayesian'] if 'event_pval_bayesian' in akeys else 0.0,
+            ra_uncertainty=args['ra_uncertainty'] if 'ra_uncertainty' in akeys else 0.0,
+            uncertainty_shape=args['uncertainty_shape'] if 'uncertainty_shape' in akeys else 0.0,
+            datecreated=args['datecreated'] if 'datecreated' in akeys else datetime.datetime.now(),
         )
         return event
 
@@ -1577,7 +1600,7 @@ class gw_candidate(db.Model):
     @property
     def parse(self):
         return parse_model(self, self.__class__)
-    
+
     def from_json(self, p, graceid, userid):
         self.datecreated = datetime.datetime.now()
         self.graceid = graceid
@@ -1590,7 +1613,8 @@ class gw_candidate(db.Model):
             if all([x in pos for x in ["POINT", "(", ")", " "]]) and "," not in pos:
                 self.position = p['position']
             else:
-                v.errors.append("Invalid position argument. Must be decimal format ra/RA, dec/DEC, or geometry type \"POINT(RA DEC)\"")
+                v.errors.append(
+                    "Invalid position argument. Must be decimal format ra/RA, dec/DEC, or geometry type \"POINT(RA DEC)\"")
         else:
             if 'ra' in p or 'RA' in p:
                 ra = p['ra'] if 'ra' in p else p['RA']
@@ -1607,10 +1631,11 @@ class gw_candidate(db.Model):
                 dec = None
 
             if ra is None or dec is None:
-                v.errors.append("Invalid position argument. Must be decimal format ra/RA, dec/DEC, or geometry type \"POINT(RA, DEC)\"")
+                v.errors.append(
+                    "Invalid position argument. Must be decimal format ra/RA, dec/DEC, or geometry type \"POINT(RA, DEC)\"")
             else:
-                self.position = "POINT("+str(ra)+" "+str(dec)+")"
-        
+                self.position = "POINT(" + str(ra) + " " + str(dec) + ")"
+
         if 'candidate_name' in p:
             candidate_name = p["candidate_name"]
             if isinstance(candidate_name, str):
@@ -1631,12 +1656,13 @@ class gw_candidate(db.Model):
             if isinstance(tns_url, str):
                 if not function.is_str_empty_or_None(tns_url):
                     if "https://www.wis-tns.org/object/" not in tns_url:
-                        v.errors.append("Invalid \'tns_url\'. Must contain following format: https://www.wis-tns.org/object/\{tns_name\}")
+                        v.errors.append(
+                            "Invalid \'tns_url\'. Must contain following format: https://www.wis-tns.org/object/\\{tns_name\\}")
                     else:
                         self.tns_url = tns_url
             else:
                 v.errors.append("Invalid \'tns_url\' type. Must be str")
-        
+
         if 'associated_galaxy' in p:
             associated_galaxy = p['associated_galaxy']
             if isinstance(associated_galaxy, str):
@@ -1662,7 +1688,8 @@ class gw_candidate(db.Model):
             try:
                 self.discovery_date = date_parse(p['discovery_date'])
             except:  # noqa: E722
-                v.errors.append("Error parsing \'discovery_date\'. Should be %Y-%m-%dT%H:%M:%S.%f format. e.g. 2019-05-01T12:00:00.00")
+                v.errors.append(
+                    "Error parsing \'discovery_date\'. Should be %Y-%m-%dT%H:%M:%S.%f format. e.g. 2019-05-01T12:00:00.00")
         else:
             v.errors.append("Error: \'discovery_date\' is required")
 
@@ -1683,10 +1710,11 @@ class gw_candidate(db.Model):
                 duenum = [d for d in enums.depth_unit if int(d) == mu or str(d.name) == mu][0]
                 self.magnitude_unit = duenum
             else:
-                v.errors.append('Invalid magnitude_unit. Must be \'ab_mag\', \'vega_mag\', \'flux_erg\', or \'flux_jy\'')
+                v.errors.append(
+                    'Invalid magnitude_unit. Must be \'ab_mag\', \'vega_mag\', \'flux_erg\', or \'flux_jy\'')
         else:
             v.errors.append('magnitude_unit is required')
-        
+
         if "wavelength_regime" in p and "wavelength_unit" in p:
             try:
                 regime = None
@@ -1695,7 +1723,7 @@ class gw_candidate(db.Model):
                     regime = str(p['wavelength_regime']).split('[')[1].split(']')[0].split(',')
                 elif isinstance(in_regime, list):
                     regime = in_regime
-                
+
                 if regime:
                     wave_min, wave_max = float(regime[0]), float(regime[1])
 
@@ -1704,17 +1732,20 @@ class gw_candidate(db.Model):
                     user_unit = p['wavelength_unit']
 
                     if user_unit in validwavelengthunits_ints or user_unit in validwavelengthunits_str:
-                        wuenum = [w for w in enums.wavelength_units if int(w) == user_unit or str(w.name) == user_unit][0]
+                        wuenum = [w for w in enums.wavelength_units if int(w) == user_unit or str(w.name) == user_unit][
+                            0]
                         scale = enums.wavelength_units.get_scale(wuenum)
-                        wave_min = wave_min*scale
-                        wave_max = wave_max*scale
-                        
-                        self.magnitude_bandwidth = 0.5*(wave_max-wave_min)
+                        wave_min = wave_min * scale
+                        wave_max = wave_max * scale
+
+                        self.magnitude_bandwidth = 0.5 * (wave_max - wave_min)
                         self.magnitude_central_wave = wave_min + self.magnitude_bandwidth
-                        self.band = SpectralRangeHandler.bandEnumFromCentralWaveBandwidth(self.magnitude_central_wave, self.magnitude_bandwidth)
+                        self.band = SpectralRangeHandler.bandEnumFromCentralWaveBandwidth(self.magnitude_central_wave,
+                                                                                          self.magnitude_bandwidth)
                         p['band'] = self.magnitude_bandwidth
                     else:
-                        v.errors.append('Error: \'wavelength_unit\' is required, valid units are \'angstrom\', \'nanometer\', and \'micron\'')
+                        v.errors.append(
+                            'Error: \'wavelength_unit\' is required, valid units are \'angstrom\', \'nanometer\', and \'micron\'')
             except:  # noqa: E722
                 v.errors.append('Error parsing \'wavelength_regime\'. required format is a list: \'[low, high]\'')
 
@@ -1726,7 +1757,7 @@ class gw_candidate(db.Model):
                     regime = str(p['frequency_regime']).split('[')[1].split(']')[0].split(',')
                 elif isinstance(in_regime, list):
                     regime = in_regime
-                
+
                 if regime:
                     min_freq, max_freq = float(regime[0]), float(regime[1])
 
@@ -1735,18 +1766,22 @@ class gw_candidate(db.Model):
                     user_unit = p['frequency_unit']
 
                     if user_unit in validfrequnits_ints or user_unit in validfrequnits_str:
-                        fuenum = [w for w in enums.frequency_units if int(w) == user_unit or str(w.name) == user_unit][0]
+                        fuenum = [w for w in enums.frequency_units if int(w) == user_unit or str(w.name) == user_unit][
+                            0]
                         scale = enums.frequency_units.get_scale(fuenum)
-                        min_freq = min_freq*scale
-                        max_freq = max_freq*scale
+                        min_freq = min_freq * scale
+                        max_freq = max_freq * scale
 
-                        self.magnitude_central_wave, self.magnitude_bandwidth = SpectralRangeHandler.wavefromFrequencyRange(min_freq, max_freq)
-                        self.magnitude_bandpass = SpectralRangeHandler.bandEnumFromCentralWaveBandwidth(self.magnitude_central_wave, self.magnitude_bandwidth)
+                        self.magnitude_central_wave, self.magnitude_bandwidth = SpectralRangeHandler.wavefromFrequencyRange(
+                            min_freq, max_freq)
+                        self.magnitude_bandpass = SpectralRangeHandler.bandEnumFromCentralWaveBandwidth(
+                            self.magnitude_central_wave, self.magnitude_bandwidth)
                         p['magnitude_bandpass'] = self.magnitude_bandpass
                     else:
-                        v.errors.append('Frequency Unit is required, valid units are \'Hz\', \'kHz\', \'MHz\', \'GHz\', and \'THz\'')
+                        v.errors.append(
+                            'Frequency Unit is required, valid units are \'Hz\', \'kHz\', \'MHz\', \'GHz\', and \'THz\'')
             except:  # noqa: E722
-               v.errors.apend('Error parsing \'frequency_regime\'. required format is a list: \'[low, high]\'')
+                v.errors.apend('Error parsing \'frequency_regime\'. required format is a list: \'[low, high]\'')
 
         if "energy_regime" in p and "energy_unit" in p:
             try:
@@ -1756,7 +1791,7 @@ class gw_candidate(db.Model):
                     regime = str(p['energy_regime']).split('[')[1].split(']')[0].split(',')
                 elif isinstance(in_regime, list):
                     regime = in_regime
-                
+
                 if regime:
                     min_energy, max_energy = float(regime[0]), float(regime[1])
 
@@ -1767,14 +1802,17 @@ class gw_candidate(db.Model):
                     if user_unit in validenergyunits_ints or user_unit in validenergyunits_str:
                         euenum = [w for w in enums.energy_units if int(w) == user_unit or str(w.name) == user_unit][0]
                         scale = enums.energy_units.get_scale(euenum)
-                        min_energy = min_energy*scale
-                        max_energy = max_energy*scale
+                        min_energy = min_energy * scale
+                        max_energy = max_energy * scale
 
-                        self.magnitude_central_wave, self.magnitude_bandwidth = SpectralRangeHandler.wavefromEnergyRange(min_energy, max_energy)
-                        self.magnitude_bandpass = SpectralRangeHandler.bandEnumFromCentralWaveBandwidth(self.magnitude_central_wave, self.magnitude_bandwidth)
+                        self.magnitude_central_wave, self.magnitude_bandwidth = SpectralRangeHandler.wavefromEnergyRange(
+                            min_energy, max_energy)
+                        self.magnitude_bandpass = SpectralRangeHandler.bandEnumFromCentralWaveBandwidth(
+                            self.magnitude_central_wave, self.magnitude_bandwidth)
                         p['magnitude_bandpass'] = self.magnitude_bandpass
                     else:
-                        v.errors.append('\'energy_unit\' is required, valid units are \'eV\', \'keV\', \'MeV\', \'GeV\', and \'TeV\'')
+                        v.errors.append(
+                            '\'energy_unit\' is required, valid units are \'eV\', \'keV\', \'MeV\', \'GeV\', and \'TeV\'')
             except:  # noqa: E722
                 v.errors.apend('Error parsing \'energy_regime\'. required format is a list: \'[low, high]\'')
             pass
@@ -1805,13 +1843,16 @@ class gw_candidate(db.Model):
                     self.magnitude_central_wave = bandinfo['central_wave']
                     self.magnitude_bandwidth = bandinfo['bandwidth']
             else:
-                v.errors.append("Field \"magnitude_bandpass\" is invalid, or manually state the wavelength, frequency, or energy regime of your observation")
+                v.errors.append(
+                    "Field \"magnitude_bandpass\" is invalid, or manually state the wavelength, frequency, or energy regime of your observation")
 
         if self.magnitude_bandwidth is None or self.magnitude_central_wave is None:
-            v.errors.append('Error Parsing Bandpass/Energy/Frequency information. Please refer to http://treasuremap.space/documentation for further assistance')
+            v.errors.append(
+                'Error Parsing Bandpass/Energy/Frequency information. Please refer to http://treasuremap.space/documentation for further assistance')
         elif self.magnitude_bandpass is None:
-            self.magnitude_bandpass = SpectralRangeHandler.bandEnumFromCentralWaveBandwidth(self.magnitude_central_wave, self.magnitude_bandwidth)
+            self.magnitude_bandpass = SpectralRangeHandler.bandEnumFromCentralWaveBandwidth(self.magnitude_central_wave,
+                                                                                            self.magnitude_bandwidth)
 
-        #valid if no errors
+        # valid if no errors
         v.valid = len(v.errors) == 0
         return v

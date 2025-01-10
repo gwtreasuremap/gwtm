@@ -6,10 +6,12 @@ class Config(object):
     DB_USER = os.environ.get('DB_USER', 'treasuremap')
     DB_PWD = os.environ.get('DB_PWD', '')
     DB_NAME = os.environ.get('DB_NAME', 'treasuremap_dev')
-    DB_HOST = os.environ.get('DB_HOST', 'localhost')
+    DB_HOST = os.environ.get('DB_HOST', 'db')
     DB_PORT = os.environ.get('DB_PORT', '5432')
     SQLALCHEMY_TRACK_MODIFICATIONS = False
-    SQLALCHEMY_POOL_TIMEOUT = 300
+    SQLALCHEMY_ENGINE_OPTIONS = {
+        'pool_timeout': 300
+    }
     MAIL_USERNAME = os.environ.get('MAIL_USERNAME', 'gwtreasuremap@gmail.com')
     MAIL_DEFAULT_SENDER = os.environ.get('MAIL_DEFAULT_SENDER', 'gwtreasuremap@gmail.com')
     MAIL_PASSWORD = os.environ.get("MAIL_PASSWORD", "")
@@ -24,11 +26,11 @@ class Config(object):
     AWS_DEFAULT_REGION = os.environ.get('AWS_DEFAULT_REGION', 'us-east-2')
     AWS_BUCKET = os.environ.get('AWS_BUCKET', 'gwtreasuremap')
     SECRET_KEY = os.urandom(16)
-    CELERY_BROKER_URL = os.environ.get('REDIS_URL', 'redis://localhost:6379')
-    CELERY_RESULT_BACKEND = os.environ.get('REDIS_URL', 'redis://localhost:6379')
+    CELERY_BROKER_URL = os.environ.get('REDIS_URL', 'redis://redis:6379')
+    CELERY_RESULT_BACKEND = os.environ.get('REDIS_URL', 'redis://redis:6379')
     CACHE_TYPE = 'RedisCache'
     CACHE_KEY_PREFIX = 'cache_'
-    CACHE_REDIS_URL = os.environ.get('REDIS_URL', 'redis://localhost:6379')
+    CACHE_REDIS_URL = os.environ.get('REDIS_URL', 'redis://redis:6379')
     CACHE_DEFAULT_TIMEOUT = 60 * 60 * 24
     AZURE_ACCOUNT_NAME = os.environ.get('AZURE_ACCOUNT_NAME', '')
     AZURE_ACCOUNT_KEY = os.environ.get('AZURE_ACCOUNT_KEY', '')

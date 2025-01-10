@@ -4,15 +4,14 @@ Website environment
 ## Requirements
 
 ### Python:
- * Python Version > 3.6.8
+ * Python Version 3.11
+
 ### Python Libraries
 (that you will probably have to `pip3 install`)
 
 ```
 python -m pip install -r requirements.txt
 ```
-
-
 
 ### Configuration
 Configuration is handled via environmental variables. At a minimum, the following env vars must be
@@ -37,6 +36,39 @@ export MAIL_PASSWORD=ASecretPassword
 export RECAPTCHA_PUBLIC_KEY=ASecretPassword2
 ```
 Or by using a utility like [direnv](https://direnv.net).
+
+### Running the application and dependencies locally
+
+1. Build the docker image
+```bash
+docker build -t gwtm_web .
+```
+2. Set mimimum required environment variables: DB_USER, DB_PWD, DB_NAME.
+3. Run the docker image using docker-compose:
+```bash
+docker-compose up -d
+```
+4. The application should now be running on localhost:8080.
+
+Note that the provided docker compose creates an empty database. 
+
+**TO DO** - Add some sample data to the database before starting the app.
+
+### Running tests
+
+Tests can be run from the root directory using pytest. First create a virtual environment and install the requirements:
+
+```bash
+python3.11 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+pip install pytest
+```
+
+Then run the tests:
+```
+pytest
+```
 
 ### Running Redis
 
@@ -66,12 +98,8 @@ celery -A src.tasks.celery worker
 You can test this is working but using the probability calculator for an event.
 
 
-### Docker
+### Running the application in production
 The application can be built and deployed as a docker image.
-
-To build and run the docker image locally, use docker compose:
-
-`docker compose up`
 
 To build the image only, use the build command:
 

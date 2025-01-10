@@ -3,12 +3,12 @@ beautifulsoup4
 bs4
 email-validator
 ephem
-Flask
+Flask==2.1.1
 Flask-Login
 Flask-Mail
-Flask-SQLAlchemy
+Flask-SQLAlchemy==2.5.1
 Flask-WTF
-GeoAlchemy2
+GeoAlchemy2>=0.13.0
 healpy
 pyjwt
 matplotlib
@@ -20,10 +20,10 @@ pytz
 requests
 scipy
 Shapely
-SQLAlchemy==1.4
+SQLAlchemy==1.4.32
 urllib3
 validators
-Werkzeug==0.16.1
+Werkzeug==2.0.3
 WTForms
 WTForms-Components
 gunicorn
@@ -38,4 +38,4 @@ gcn-kafka
 fsspec
 adlfs
 s3fs
-markupsafe==2.0.1
+markupsafe>=2.1.1

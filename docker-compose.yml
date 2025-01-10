@@ -1,39 +1,93 @@
 version: '3.8'
 
 services:
-    web:
-        build: .
-        command: gunicorn --bind=0.0.0.0:8080 src.api:app --timeout=1000
-        ports:
-            - 8080:8080
-        environment:
-            - DEBUG
-            - DB_HOST
-            - DB_USER
-            - DB_PWD
-            - DB_NAME
-            - MAIL_PASSWORD
-            - RECAPTCHA_PUBLIC_KEY
-            - RECAPTCHA_PRIVATE_KEY
-            - ZENODO_ACCESS_KEY
-            - AWS_ACCESS_KEY_ID
-            - AWS_SECRET_ACCESS_KEY
-            - AWS_DEFAULT_REGION
-            - AWS_BUCKET
-    worker:
-        build: .
-        command: celery -A src.tasks.celery worker
-        environment:
-            - DEBUG
-            - DB_HOST
-            - DB_USER
-            - DB_PWD
-            - DB_NAME
-            - MAIL_PASSWORD
-            - RECAPTCHA_PUBLIC_KEY
-            - RECAPTCHA_PRIVATE_KEY
-            - ZENODO_ACCESS_KEY
-            - AWS_ACCESS_KEY_ID
-            - AWS_SECRET_ACCESS_KEY
-            - AWS_DEFAULT_REGION
-            - AWS_BUCKET
+  web:
+    image: gwtm_web:latest
+    container_name:  gwtm-web
+    ports:
+      - "8080:8080"
+    environment:
+      - DB_USER=${DB_USER}
+      - DB_PWD=${DB_PWD}
+      - DB_NAME=${DB_NAME}
+      - DB_HOST=db
+      - DB_PORT=5432
+      - MAIL_PASSWORD=${MAIL_PASSWORD}
+      - RECAPTCHA_PUBLIC_KEY=${RECAPTCHA_PUBLIC_KEY}
+      - RECAPTCHA_PRIVATE_KEY=${RECAPTCHA_PRIVATE_KEY}
+      - ZENODO_ACCESS_KEY=${ZENODO_ACCESS_KEY}
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - REDIS_URL=redis://redis:6379/0
+    depends_on:
+      - db
+      - db_init
+      - redis
+      - celery_worker
+
+  db:
+    image: postgis/postgis:12-3.5
+    container_name: gwtm_db
+    environment:
+      - DB_USER=${DB_USER}
+      - DB_PWD=${DB_PWD}
+      - DB_NAME=${DB_NAME}
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PWD}
+      - POSTGRES_DB=${DB_NAME}
+      - POSTGRES_HOST_AUTH_METHOD=trust
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql
+      - ./init-db.sh:/docker-entrypoint-initdb.d/init-db.sh
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}" ]
+      interval: 60s
+      timeout: 65s
+      retries: 5
+
+  redis:
+    image: redis:latest
+    container_name: redis
+    ports:
+      - "6379:6379"
+
+  celery_worker:
+    image: gwtm_web:latest
+    container_name: celery_worker
+    command: celery -A src.tasks.celery worker --loglevel=info
+    environment:
+      - DB_USER=${DB_USER}
+      - DB_PWD=${DB_PWD}
+      - DB_NAME=${DB_NAME}
+      - DB_HOST=db
+      - DB_PORT=5432
+      - MAIL_PASSWORD=${MAIL_PASSWORD}
+      - RECAPTCHA_PUBLIC_KEY=${RECAPTCHA_PUBLIC_KEY}
+      - RECAPTCHA_PRIVATE_KEY=${RECAPTCHA_PRIVATE_KEY}
+      - ZENODO_ACCESS_KEY=${ZENODO_ACCESS_KEY}
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - REDIS_URL=redis://redis:6379/0
+    depends_on:
+      - db
+      - redis
+
+  db_init:
+    image: gwtm_web:latest
+    container_name: db_init
+    command: python -c "from src.models import create_database_tables; create_database_tables()"
+    environment:
+      - DB_USER=${DB_USER}
+      - DB_PWD=${DB_PWD}
+      - DB_NAME=${DB_NAME}
+      - DB_HOST=db
+      - DB_PORT=5432
+    depends_on:
+      db:
+          condition: service_healthy
+
+
+volumes:
+  postgres_data:

@@ -79,7 +79,7 @@ def get_footprints_v1():
 		ors.append(models.instrument.nickname.contains(name.strip()))
 		filter.append(or_(*ors))
 
-	footprints= db.session.query(models.footprint_ccd).filter(*filter).all()
+	footprints = db.session.query(models.footprint_ccd).filter(*filter).all()
 	footprints = [x.parse for x in footprints]
 
 	return make_response(json.dumps(footprints), 200)
@@ -104,7 +104,7 @@ def remove_event_galaxies_v1():
 					for ge in gallist_entries:
 						db.session.delete(ge)
 					db.session.commit()
-					return make_response(json.dumps("Successfully deleted your galaxy list"), 200)
+					return make_response('Successfully deleted your galaxy list', 200)
 				else:
 					return make_response('You can only delete information related to your api_token! shame shame', 500)
 			else:
@@ -125,7 +125,7 @@ def get_event_galaxies_v1():
 	filter = [models.gw_galaxy_entry.listid == models.gw_galaxy_list.id]
 
 	if 'graceid' in args:
-		graceid = models.gw_alert.graceidfromalternate(args['graceid'])
+		graceid = models.gw_alert().graceidfromalternate(args['graceid'])
 		filter.append(models.gw_galaxy_list.graceid == graceid)
 	else:
 		return make_response("\'graceid\' is required", 500)
@@ -168,7 +168,7 @@ def get_event_galaxies_v1():
 	gal_entries = db.session.query(models.gw_galaxy_entry).filter(*filter).all()
 	gal_entries = [x.parse for x in gal_entries]
 
-	return make_response(json.dumps(gal_entries), 200)
+	return make_response(dump_json(gal_entries), 200)
 
 
 @app.route('/api/v1/event_galaxies', methods=['POST'])
@@ -183,7 +183,7 @@ def post_event_galaxies_v1():
 	warnings = []
 	errors = []
 
-	if "api_token" in args:
+	if 'api_token' in args:
 		apitoken = args['api_token']
 		user = db.session.query(models.users).filter(models.users.api_token ==  apitoken).first()
 		if user is None:
@@ -193,26 +193,29 @@ def post_event_galaxies_v1():
 
 	models.useractions.write_action(request=request, current_user=user)
 
-	if "graceid" in args:
-		graceid = args['graceid']
-		graceid = models.gw_alert.graceidfromalternate(graceid)
-	else:
-		return make_response('graceid is required', 500)
+	is_valid, response_message = is_graceid_valid(args, db)
+	if not is_valid:
+		return make_response(response_message, 500)
 
-	if "timesent_stamp" in args:
+	graceid = args['graceid']
+
+	if 'timesent_stamp' in args:
 		timesent_stamp = args['timesent_stamp']
 		try:
-			#parsetime
-			time = datetime.datetime.strptime(timesent_stamp, "%Y-%m-%dT%H:%M:%S.%f")
-		except: # noqa: E722
-			return make_response("Error parsing date. Should be %Y-%m-%dT%H:%M:%S.%f format. e.g. 2019-05-01T12:00:00.00", 500)
+			# parsetime
+			time_sent = datetime.datetime.strptime(timesent_stamp, "%Y-%m-%dT%H:%M:%S.%f")
+		except:  # noqa: E722
+			return make_response("Error parsing date. Should be %Y-%m-%dT%H:%M:%S.%f format. e.g. 2019-05-01T12:00:00.00",
+								 500)
 
 		alert = db.session.query(models.gw_alert).filter(
-			models.gw_alert.timesent < time + datetime.timedelta(seconds=15),
-			models.gw_alert.timesent > time - datetime.timedelta(seconds=15),
-			models.gw_alert.graceid == graceid).first()
+			models.gw_alert.timesent < time_sent + datetime.timedelta(seconds=15),
+			models.gw_alert.timesent > time_sent - datetime.timedelta(seconds=15),
+			models.gw_alert.graceid == args['graceid']).first()
 		if alert is None:
-			return make_response('Invalid \'timesent_stamp\' for event\n Please visit http://treasuremap.space/alerts?graceids={} for valid timesent stamps for this event'.format(graceid), 500)
+			return make_response(
+				'Invalid \'timesent_stamp\' for event\n Please visit http://treasuremap.space/alerts?graceids={} for valid timesent stamps for this event'.format(
+					graceid), 500)
 	else:
 		return make_response('timesent_stamp is required', 500)
 
@@ -351,16 +354,10 @@ def add_pointings_v1():
 	errors = []
 	warnings = []
 
-	if "graceid" in args:
-		gid = args['graceid']
-		gid = models.gw_alert.graceidfromalternate(gid)
-		current_gids = db.session.query(models.gw_alert.graceid).filter(models.gw_alert.graceid == gid).all()
-		if len(current_gids) > 0:
-			valid_gid = True
-		else:
-			return make_response("Invalid graceid", 500)
-	else:
-		return make_response("graceid is required", 500)
+	is_valid, response_message = is_graceid_valid(args, db)
+	if not is_valid:
+		return make_response(response_message, 500)
+	gid = args['graceid']
 
 	if 'request_doi' in args:
 		post_doi = bool(args['request_doi'])
@@ -769,7 +766,7 @@ def get_pointings_v1():
 	pointings = db.session.query(models.pointing).filter(*filter).all()
 	pointings = [x.parse for x in pointings]
 
-	return make_response(json.dumps(pointings), 200)
+	return make_response(dump_json(pointings), 200)
 
 
 @app.route("/api/v1/request_doi", methods=['POST'])
@@ -1151,10 +1148,10 @@ def query_alerts_v1():
 		*filter
 	).order_by(
 		models.gw_alert.datecreated.desc()
-	).all()
+  	).all()
 	alerts = [x.parse for x in alerts]
 
-	return make_response(json.dumps(alerts), 200)
+	return make_response(dump_json(alerts), 200)
 
 
 @app.route('/api/v1/del_test_alerts', methods=['POST'])
@@ -1625,7 +1622,21 @@ def fixdata_v1():
 
 	return make_response("success", 200)
 
+def is_graceid_valid(args, db):
+	if "graceid" in args:
+		gid = args['graceid']
+		gid = models.gw_alert.graceidfromalternate(gid)
+		current_gids = db.session.query(models.gw_alert.graceid).filter(models.gw_alert.graceid == gid).all()
+		if len(current_gids) > 0:
+			return True, None
+		else:
+			return False, 'Invalid graceid'
+	else:
+		return False, 'graceid is required'
 
+def dump_json(input_object):
+	# Wrap json.dumps() for easier testing
+	return json.dumps(input_object)
 
 #Post Candidate/s
 #Parameters: List of Candidate JSON objects

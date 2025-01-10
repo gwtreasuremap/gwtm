@@ -21,7 +21,7 @@ def make_celery(app):
 celery = make_celery(app)
 
 
-@celery.task()
+@celery.task
 def add_together(a, b):
     print('hi')
     return a + b
