@@ -1022,7 +1022,7 @@ def get_gw_contours():
 		_file = gwtm_io.download_gwtm_file(filename=contourpath, source=config.STORAGE_BUCKET_SOURCE, config=config)
 		return make_response(_file, 200)
 	except: # noqa: E722
-		return make_response(f'Error in retrieving Contour file: {contourpath}', 200)
+		return make_response(f'Error in retrieving Contour file: {contourpath}', 404)
 
 
 @app.route('/api/v1/gw_skymap', methods=['GET'])
@@ -1062,7 +1062,7 @@ def get_gw_skymap():
 		_file = gwtm_io.download_gwtm_file(filename=skymap_path, source=config.STORAGE_BUCKET_SOURCE, config=config, decode=False)
 		return make_response(_file, 200)
 	except: # noqa: E722
-		return make_response(f'Error in retrieving Contour file: {skymap_path}', 200)
+		return make_response(f'Error in retrieving Contour file: {skymap_path}', 404)
 
 
 @app.route('/api/v1/grb_moc_file', methods=['GET'])
@@ -1099,7 +1099,7 @@ def get_grbmoc_v1():
 		_file = gwtm_io.download_gwtm_file(filename=moc_filepath, source=config.STORAGE_BUCKET_SOURCE, config=config)
 		return make_response(_file, 200)
 	except: # noqa: E722 
-		return make_response('MOC file for GW-Alert: \'{}\' and instrument: \'{}\' does not exist!'.format(gid, inst), 200)
+		return make_response('MOC file for GW-Alert: \'{}\' and instrument: \'{}\' does not exist!'.format(gid, inst), 404)
 
 
 @app.route('/api/v1/post_alert', methods=['POST'])
