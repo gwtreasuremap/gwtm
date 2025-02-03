@@ -2,6 +2,7 @@ import astropy
 import pandas as pd
 import json
 import time
+from io import StringIO
 
 from flask_wtf import FlaskForm
 from flask_wtf.recaptcha import RecaptchaField
@@ -262,6 +263,7 @@ class AlertsForm(FlaskForm):
         }
 
         graceid = args['graceid']
+        renorm_skymap = args['renorm_skymap']
 
         self.viz = False
 
@@ -512,12 +514,22 @@ class AlertsForm(FlaskForm):
             self.avgra = self.selected_alert_info.avgra
             self.avgdec = self.selected_alert_info.avgdec
 
-            contourpath = f'{s3path}/'+path_info+'-contours-smooth.json'
+            if renorm_skymap:
+                #load cached renormalized skymap instead
+                contourpath = renorm_skymap
+                normed_cache = gwtm_io.get_cached_file(renorm_skymap, config)
+            else:
+                #load normal skymap
+                contourpath = f'{s3path}/'+path_info+'-contours-smooth.json'
             self.mappathinfo = mappathinfo
             #if it exists, add it to the overlay list
             try:
-                f = gwtm_io.download_gwtm_file(contourpath, config.STORAGE_BUCKET_SOURCE, config)
-                contours_data = pd.read_json(f)
+                if renorm_skymap:
+                    normed_result = json.loads(normed_cache)
+                    contours_data = pd.read_json(StringIO(normed_result['contours_json']))
+                else:
+                    f = gwtm_io.download_gwtm_file(contourpath, config.STORAGE_BUCKET_SOURCE, config)
+                    contours_data = pd.read_json(f)
                 contour_geometry = []
                 for contour in contours_data['features']:
                     contour_geometry.extend(contour['geometry']['coordinates'])

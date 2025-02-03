@@ -383,8 +383,9 @@ text.info:hover span{ /*the span will display just on :hover state*/
     wavelengths, or depth. All fields are optional, but cuts on depths must have an associated unit. 
     If an empty form is submitted, the total reported coverage regardless of depth or band is computed. 
     Once a HEALPIX pixel has been first covered, it is marked as done, to avoid double counting probability 
-    when the same field is covered multiple times. After clicking, be patient, it may take up to 2 minutes 
+    when the same field is covered multiple times. After clicking Calculate, be patient, it may take up to 2 minutes 
     to fully compute the coverage profile.
+    You may also click Renorm Skymap to remove the selected pointings from the GW localization contours in the map above. 
   </i>
   <p style="color: red; font-size: small;">
     Disclaimer: The DECam Footprint currently breaks in the calculator. We are temporarily approximating its coverage as a circle with 1 deg radius.
@@ -455,7 +456,12 @@ text.info:hover span{ /*the span will display just on :hover state*/
   
 
   <br><br>
-  <input type="button" id="calculate" value="Calculate" class="btn btn-primary" style="display: block; margin: 0 auto;"/>
+  <div style="display: flex; justify-content: center; gap: 10px; margin: 0 auto;">
+    <input type="button" id="calculate" value="Calculate" class="btn btn-primary"/>
+    <input type="button" id="renorm-skymap" value="Renorm Skymap" class="btn btn-primary"/>
+  </div>
+  <!input type="button" id="calculate" value="Calculate" class="btn btn-primary" style="display: block; margin: 0 auto;"/>
+  <!input type="button" id="renorm-skymap" value="Renorm Skymap" class="btn btn-secondary"/>
 </div>
     
 <!-- Creation of Aladin Lite instance with initial parameters -->
@@ -803,6 +809,41 @@ text.info:hover span{ /*the span will display just on :hover state*/
     });
   });
 
+  //Function that renormalizes the skymap
+  $(document).ready( function() {
+      $('#renorm-skymap').click(function() {
+        $('#renorm-skymap').prop('disabled', true)
+        var btn = $(this).button('loading');
+        var inst_cov = $('#inst_cov').val()
+        var band_cov = $('#band_cov').val()
+        var depth_cov = $('#depth_cov').val()
+        var depth_unit = $('#depth_unit').val()
+        var approx_cov = $('#approx_cov').val()
+        var spectral_type = $('#spectral_range_type').val()
+        var spectral_unit = $('#spectral_range_unit').val()
+        var spectral_range_low = $('#spectral_range_low').val()
+        var spectral_range_high = $('#spectral_range_high').val()
+
+        $.ajax(
+          {
+              url: '/ajax_renormalize_skymap',
+              data: 'graceid={{ form.graceid }}&mappathinfo={{ form.mappathinfo }}&inst_cov='+inst_cov+'&band_cov='+band_cov+'&depth_cov='+depth_cov+'&depth_unit='+depth_unit+'&approx_cov='+approx_cov+'&spec_range_type='+spectral_type+'&spec_range_unit='+spectral_unit+'&spec_range_low='+spectral_range_low+'&spec_range_high='+spectral_range_high
+          }
+        ).done(function (reply) 
+          {
+            $('#renorm-skymap').prop('disabled', false)
+            window.location.href = '/alerts?graceids={{ form.graceid }}&normed_path=' + reply;
+          }
+        ).fail(function(jqXHR, textStatus)
+          {
+            $('#renorm-skymap').prop('disabled', false)
+            $('#coveragediv').html("<i><font color='red'>Error in Renormalize Skymap</font></i>")
+            btn.button('reset')
+          }
+      );
+    });
+  });
+  
   //getting the alert event galaxies
   $(document).ready( function() {
     $('#alert_event_galaxies').click(function() {

@@ -295,10 +295,15 @@ def alerts():
 	status = request.args.get('pointing_status')
 	status = status if status is not None else 'completed'
 	alerttype = request.args.get('alert_type')
-	args = {'graceid':graceid, 'pointing_status':status, 'alert_type': alerttype}
+
+        # Get the optional JSON path argument for loading a renormed skymap
+	renorm_arg = request.args.get('normed_path', default=False)
+	
+	args = {'graceid':graceid, 'pointing_status':status, 'alert_type': alerttype, 'renorm_skymap':renorm_arg}
 	form = forms.AlertsForm
 	form.page = 'alerts'
 	form = form.construct_alertform(form, args)
+        
 	if graceid != 'None' and graceid is not None:
 		return render_template("alerts.html", form=form, detection_overlays=form.detection_overlays, GRBoverlays=form.GRBoverlays)
 

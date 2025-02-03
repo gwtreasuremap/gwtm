@@ -12,6 +12,7 @@ import pandas as pd
 import tempfile
 import time
 import hashlib
+import ligo.skymap.postprocess
 
 import shapely.wkb
 from werkzeug.exceptions import HTTPException
@@ -650,6 +651,151 @@ def calc_prob_coverage(debug, graceid, mappathinfo, inst_cov, band_cov, depth, d
 	return times, probs, areas
 
 
+def calc_renormalized_skymap(debug, graceid, mappathinfo, inst_cov, band_cov, depth, depth_unit, approx_cov, cache_key, slow, shigh, stype):
+
+	approx_cov = True
+	ztfid = 47 
+	ztf_approx_id = 76
+	decamid = 38
+	decam_approx_id = 98
+	
+	approx_dict = {
+		ztfid: ztf_approx_id,
+		decamid: decam_approx_id
+	}
+
+	#try:
+	with tempfile.NamedTemporaryFile() as f:
+		tmpdata = gwtm_io.download_gwtm_file(mappathinfo, source=config.STORAGE_BUCKET_SOURCE, config=config, decode=False)
+		f.write(tmpdata)
+		skymap = hp.read_map(f.name)
+		nside = hp.npix2nside(len(skymap))
+	#except:
+	#	raise HTTPException('Calculator ERROR: Map not found. Please contact the administrator.')
+
+	pointing_filter = []
+	pointing_filter.append(models.pointing_event.graceid == graceid)
+	pointing_filter.append(models.pointing.status == 'completed')
+	pointing_filter.append(models.pointing_event.pointingid == models.pointing.id)
+	pointing_filter.append(models.pointing.instrumentid != 49)
+
+	if inst_cov != '':
+		insts_cov = [int(x) for x in inst_cov.split(',')]
+		pointing_filter.append(models.pointing.instrumentid.in_(insts_cov))
+	#if band_cov != '':
+	#	bands_cov = [x for x in band_cov.split(',')]
+	#	pointing_filter.append(models.pointing.band.in_(bands_cov))
+	if depth_unit != 'None' and depth_unit != '':
+		pointing_filter.append(models.pointing.depth_unit == depth_unit)
+	if depth is not None and function.isFloat(depth):
+		if 'mag' in depth_unit:
+			pointing_filter.append(models.pointing.depth >= float(depth))
+		elif 'flux' in depth_unit:
+			pointing_filter.append(models.pointing.depth <= float(depth))
+		else:
+			raise HTTPException('Unknown depth unit.')
+
+	if slow is not None and shigh is not None:
+		pointing_filter.append(models.pointing.inSpectralRange(slow, shigh, stype))
+
+	pointings_sorted = db.session.query(
+		models.pointing.id,
+		models.pointing.instrumentid,
+		models.pointing.pos_angle,
+		func.ST_AsText(models.pointing.position).label('position'),
+		models.pointing.band,
+		models.pointing.depth,
+		models.pointing.time
+	).filter(
+		*pointing_filter
+	).order_by(
+		models.pointing.time.asc()
+	).all()
+
+	instrumentids = [x.instrumentid for x in pointings_sorted]
+
+	for apid in approx_dict.keys():
+		if apid in instrumentids:
+			instrumentids.append(approx_dict[apid])
+
+	#filter and query the relevant instrument footprints
+	footprintinfo = db.session.query(
+		func.ST_AsText(models.footprint_ccd.footprint).label('footprint'),
+		models.footprint_ccd.instrumentid
+	).filter(
+		models.footprint_ccd.instrumentid.in_(instrumentids)
+	).all()
+	
+	qps = []
+
+        #add coordinate indices of all pointings
+	for p in pointings_sorted:
+		#convert ra, dec info into numerical data
+		ra, dec = function.sanatize_pointing(p.position)
+
+		#footprints of ccds for each instrument
+		if approx_cov:
+			if p.instrumentid in approx_dict.keys():
+				footprint_ccds = [x.footprint for x in footprintinfo if x.instrumentid == approx_dict[p.instrumentid]]
+			else:
+				footprint_ccds = [x.footprint for x in footprintinfo if x.instrumentid ==  p.instrumentid]
+		else:
+			footprint_ccds = [x.footprint for x in footprintinfo if x.instrumentid ==  p.instrumentid]
+                #convert footprint info into numerical data
+		sanatized_ccds = function.sanatize_footprint_ccds(footprint_ccds)
+		#project each ccd footprint onto the pointing
+		for ccd in sanatized_ccds:
+			pointing_footprint = function.project_footprint(ccd, ra, dec, p.pos_angle)
+
+			#add footprint coordinates to pixel array
+			ras_poly = [x[0] for x in pointing_footprint][:-1]
+			decs_poly = [x[1] for x in pointing_footprint][:-1]
+			xyzpoly = astropy.coordinates.spherical_to_cartesian(1, np.deg2rad(decs_poly), np.deg2rad(ras_poly))
+			qp = hp.query_polygon(nside,np.array(xyzpoly).T, inclusive=True)
+			qps.extend(qp)
+
+			deduped_indices=list(dict.fromkeys(qps))
+	
+	skymap[deduped_indices] = 0
+	normed_skymap = skymap/np.sum(skymap)
+	normed_contours_json = calc_renormalized_skymap_contours(normed_skymap)
+	
+	cache_file = {
+		'contours_json': normed_contours_json,
+	}
+	gwtm_io.set_cached_file(cache_key, cache_file, config)
+
+	return normed_contours_json
+
+def calc_renormalized_skymap_contours(normed_skymap):
+	#generate map of confidence levels from skymap
+	i = np.flipud(np.argsort(normed_skymap))
+	cumsum = np.cumsum(normed_skymap[i])
+	cls = np.empty_like(normed_skymap)
+	cls[i] = cumsum * 100 #convert probability to percent
+	#input ring-indexed healpix array to make ligo contours at 50%, 90%
+	paths = list(ligo.skymap.postprocess.contour(cls, [50, 90], nest=False, degrees=True, simplify=True))
+
+	#create json, where the "features" key holds a list of 2 contours
+	contours_json = json.dumps({
+		'type': 'FeatureCollection',
+		'features': [
+			{
+				'type': 'Feature',
+				'properties': {
+					'credible_level': contour
+				},
+				'geometry': {
+					'type': 'MultiLineString',
+					'coordinates': path
+				}
+			}
+			for contour, path in zip([50,90], paths)
+		]
+	})
+	return contours_json
+
+
 def generate_prob_plot(times, probs, areas):
 	fig = make_subplots(specs=[[{"secondary_y": True}]])
 
@@ -784,6 +930,91 @@ def plot_prob_coverage():
 #		return generate_prob_plot(times, probs, areas)
 #	else:
 #		return 'false'
+
+
+@app.route("/ajax_renormalize_skymap", methods=['GET', 'POST'])
+def plot_renormalized_skymap():
+	start = time.time()
+
+	debug = app.debug
+	graceid = models.gw_alert.graceidfromalternate(request.args.get('graceid'))
+	mappathinfo = request.args.get('mappathinfo')
+	inst_cov = request.args.get('inst_cov')
+	band_cov = request.args.get('band_cov')
+	depth = request.args.get('depth_cov')
+	depth_unit = request.args.get('depth_unit')
+	approx_cov = int(request.args.get('approx_cov')) == 1
+	spec_range_type = request.args.get('spec_range_type')
+	spec_range_unit = request.args.get('spec_range_unit')
+	spec_range_low = request.args.get('spec_range_low')
+	spec_range_high = request.args.get('spec_range_high')
+	slow, shigh = None, None
+	specenum = None
+	
+	pointing_filter = []
+	pointing_filter.append(models.pointing_event.graceid == graceid)
+	pointing_filter.append(models.pointing.status == 'completed')
+	pointing_filter.append(models.pointing_event.pointingid == models.pointing.id)
+	pointing_filter.append(models.pointing.instrumentid != 49)
+
+	if inst_cov != '':
+		insts_cov = [int(x) for x in inst_cov.split(',')]
+		pointing_filter.append(models.pointing.instrumentid.in_(insts_cov))
+	#if band_cov != '':
+	#	bands_cov = [x for x in band_cov.split(',')]
+	#	pointing_filter.append(models.pointing.band.in_(bands_cov))
+	if depth_unit != 'None' and depth_unit != '':
+		pointing_filter.append(models.pointing.depth_unit == depth_unit)
+	if depth is not None and function.isFloat(depth):
+		if 'mag' in depth_unit:
+			pointing_filter.append(models.pointing.depth >= float(depth))
+		elif 'flux' in depth_unit:
+			pointing_filter.append(models.pointing.depth <= float(depth))
+		else:
+			raise HTTPException('Unknown depth unit.')
+		
+	if spec_range_low not in ['', None] and spec_range_high not in ['', None]:
+		if spec_range_type == 'wavelength':
+			unit = [x for x in enums.wavelength_units if spec_range_unit == x.name][0]
+			scale = enums.wavelength_units.get_scale(unit)
+			slow, shigh = float(spec_range_low)*scale, float(spec_range_high)*scale
+		if spec_range_type == 'energy':
+			unit = [x for x in enums.energy_units if spec_range_unit == x.name][0]
+			scale = enums.energy_units.get_scale(unit)
+			slow, shigh = float(spec_range_low)*scale, float(spec_range_high)*scale
+		if spec_range_type == 'frequency':
+			unit = [x for x in enums.frequency_units if spec_range_unit == x.name][0]
+			scale = enums.frequency_units.get_scale(unit)
+			slow, shigh = float(spec_range_low)*scale, float(spec_range_high)*scale
+			
+		specenum = [x for x in models.SpectralRangeHandler.spectralrangetype if spec_range_type == x.name][0]
+		pointing_filter.append(models.pointing.inSpectralRange(slow, shigh, specenum))
+
+	pointings_sorted = db.session.query(
+		models.pointing.id
+	).filter(
+		*pointing_filter
+	).order_by(
+		models.pointing.time.asc()
+	).all()
+
+	pointingids = [x.id for x in pointings_sorted]
+	pointingids = sorted(pointingids)
+	hashpointingids =  hashlib.sha1(json.dumps(pointingids).encode()).hexdigest()
+
+	cache_key = f'cache/normed_contours_{graceid}_{approx_cov}_{hashpointingids}'
+	#try to load a cached contour
+	cache_file = gwtm_io.get_cached_file(cache_key, config)
+	#can't find a cached one, then generate one (warning, can be slow)
+	if cache_file is None:
+		normed_contours = calc_renormalized_skymap(debug, graceid, mappathinfo, inst_cov, band_cov, depth, depth_unit, approx_cov, cache_key, slow, shigh, specenum)
+        
+	end = time.time()
+
+	total = end-start
+	print('total time doing renormalize skymap: {}'.format(total))
+        
+	return cache_key
 
 
 @app.route('/ajax_preview_footprint', methods=['GET'])
